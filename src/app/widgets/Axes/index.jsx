@@ -43,7 +43,8 @@ import {
     TINYG_MACHINE_STATE_END,
     TINYG_MACHINE_STATE_RUN,
     // Workflow
-    WORKFLOW_STATE_RUNNING
+    WORKFLOW_STATE_RUNNING,
+    // WORKFLOW_STATE_PAUSED,
 } from '../../constants';
 import {
     MODAL_NONE,
@@ -180,9 +181,14 @@ class AxesWidget extends PureComponent {
         },
         jog: (params = {}) => {
             const s = map(params, (value, letter) => ('' + letter.toUpperCase() + value)).join(' ');
+            if (controller.type === GRBL) {
+                const f = (controller.settings.version && controller.settings.version.startsWith('1.1')) ? Math.min(parseFloat(controller.settings.settings.$110), parseFloat(controller.settings.settings.$111)) : 500;
+                controller.command('gcode', '$J=G91 ' + s + ' F' + f);
+            } else {
             controller.command('gcode', 'G91'); // relative
             controller.command('gcode', 'G0 ' + s);
             controller.command('gcode', 'G90'); // absolute
+            }
         },
         move: (params = {}) => {
             const s = map(params, (value, letter) => ('' + letter.toUpperCase() + value)).join(' ');
@@ -431,14 +437,14 @@ class AxesWidget extends PureComponent {
         },
         'workflow:state': (workflowState) => {
             const canJog = (workflowState !== WORKFLOW_STATE_RUNNING);
-
+            // console.log('state:' + workflowState);
             // Disable keypad jogging and shuttle wheel when the workflow state is 'running'.
             // This prevents accidental movement while sending G-code commands.
             this.setState(state => ({
                 jog: {
                     ...state.jog,
                     axis: canJog ? state.jog.axis : '',
-                    keypad: canJog ? state.jog.keypad : false
+                    keypad: canJog
                 },
                 workflow: {
                     ...state.workflow,

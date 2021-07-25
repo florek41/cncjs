@@ -25,7 +25,8 @@ import {
     AXIS_B,
     AXIS_C,
     IMPERIAL_UNITS,
-    METRIC_UNITS
+    METRIC_UNITS,
+    GRBL,
 } from '../../constants';
 import styles from './index.styl';
 import iconMinus from './images/minus.svg';
@@ -192,17 +193,19 @@ class DisplayPanel extends PureComponent {
                     >
                         {i18n._('Go To Machine Zero (G53 G0 X0 Y0 Z0)')}
                     </MenuItem>
+                    {(controller.type !== GRBL) && (
+                        <MenuItem
+                            eventKey="G28.3 X0 Y0 Z0"
+                            disabled={!canClick}
+                        >
+                            {i18n._('Set Machine Zero (G28.3 X0 Y0 Z0)')}
+                        </MenuItem>
+                    )}
                     <MenuItem
-                        eventKey="G28.3 X0 Y0 Z0"
+                        eventKey={(controller.type === GRBL) ? '$H' : 'G28.2 X0 Y0 Z0'}
                         disabled={!canClick}
                     >
-                        {i18n._('Set Machine Zero (G28.3 X0 Y0 Z0)')}
-                    </MenuItem>
-                    <MenuItem
-                        eventKey="G28.2 X0 Y0 Z0"
-                        disabled={!canClick}
-                    >
-                        {i18n._('Homing Sequence (G28.2 X0 Y0 Z0)')}
+                        {i18n._('Homing Sequence (G28.2 X0 Y0 Z0 or $H)')}
                     </MenuItem>
                 </Dropdown.Menu>
             </Dropdown>
@@ -326,17 +329,19 @@ class DisplayPanel extends PureComponent {
                     >
                         {i18n._('Go To Machine Zero On X Axis (G53 G0 X0)')}
                     </MenuItem>
+                    {(controller.type !== GRBL) && (
+                        <MenuItem
+                            eventKey="G28.3 X0"
+                            disabled={!canClick}
+                        >
+                            {i18n._('Zero Out Machine X Axis (G28.3 X0)')}
+                        </MenuItem>
+                    )}
                     <MenuItem
-                        eventKey="G28.3 X0"
+                        eventKey={(controller.type === GRBL) ? '$HX' : 'G28.2 X0'}
                         disabled={!canClick}
                     >
-                        {i18n._('Zero Out Machine X Axis (G28.3 X0)')}
-                    </MenuItem>
-                    <MenuItem
-                        eventKey="G28.2 X0"
-                        disabled={!canClick}
-                    >
-                        {i18n._('Home Machine X Axis (G28.2 X0)')}
+                        {i18n._('Home Machine X Axis (G28.2 X0 or $HX)')}
                     </MenuItem>
                 </Dropdown.Menu>
             </Dropdown>
@@ -455,17 +460,19 @@ class DisplayPanel extends PureComponent {
                     >
                         {i18n._('Go To Machine Zero On Y Axis (G53 G0 Y0)')}
                     </MenuItem>
+                    {(controller.type !== GRBL) && (
+                        <MenuItem
+                            eventKey="G28.3 Y0"
+                            disabled={!canClick}
+                        >
+                            {i18n._('Zero Out Machine Y Axis (G28.3 Y0)')}
+                        </MenuItem>
+                    )}
                     <MenuItem
-                        eventKey="G28.3 Y0"
+                        eventKey={(controller.type === GRBL) ? '$HY' : 'G28.2 Y0'}
                         disabled={!canClick}
                     >
-                        {i18n._('Zero Out Machine Y Axis (G28.3 Y0)')}
-                    </MenuItem>
-                    <MenuItem
-                        eventKey="G28.2 Y0"
-                        disabled={!canClick}
-                    >
-                        {i18n._('Home Machine Y Axis (G28.2 Y0)')}
+                        {i18n._('Home Machine Y Axis (G28.2 Y0 or $HY)')}
                     </MenuItem>
                 </Dropdown.Menu>
             </Dropdown>
@@ -584,17 +591,19 @@ class DisplayPanel extends PureComponent {
                     >
                         {i18n._('Go To Machine Zero On Z Axis (G53 G0 Z0)')}
                     </MenuItem>
+                    {(controller.type !== GRBL) && (
+                        <MenuItem
+                            eventKey="G28.3 Z0"
+                            disabled={!canClick}
+                        >
+                            {i18n._('Zero Out Machine Z Axis (G28.3 Z0)')}
+                        </MenuItem>
+                    )}
                     <MenuItem
-                        eventKey="G28.3 Z0"
+                        eventKey={(controller.type === GRBL) ? '$HZ' : 'G28.2 Z0'}
                         disabled={!canClick}
                     >
-                        {i18n._('Zero Out Machine Z Axis (G28.3 Z0)')}
-                    </MenuItem>
-                    <MenuItem
-                        eventKey="G28.2 Z0"
-                        disabled={!canClick}
-                    >
-                        {i18n._('Home Machine Z Axis (G28.2 Z0)')}
+                        {i18n._('Home Machine Z Axis (G28.2 Z0 or $HZ)')}
                     </MenuItem>
                 </Dropdown.Menu>
             </Dropdown>
@@ -1037,25 +1046,27 @@ class DisplayPanel extends PureComponent {
                     <Taskbar>
                         <div className="clearfix">
                             <div className="pull-right">
-                                <TaskbarButton
-                                    disabled={!canZeroOutMachine}
-                                    onClick={() => {
-                                        controller.command('gcode', `G28.3 ${axisLabel}0`);
-                                    }}
-                                >
-                                    <Tooltip
-                                        placement="bottom"
-                                        content={i18n._('Zero Out Machine')}
+                                {(controller.type !== GRBL) && (
+                                    <TaskbarButton
                                         disabled={!canZeroOutMachine}
-                                        hideOnClick
+                                        onClick={() => {
+                                            controller.command('gcode', `G28.3 ${axisLabel}0`);
+                                        }}
                                     >
-                                        <Image src={iconPin} width="14" height="14" />
-                                    </Tooltip>
-                                </TaskbarButton>
+                                        <Tooltip
+                                            placement="bottom"
+                                            content={i18n._('Zero Out Machine')}
+                                            disabled={!canZeroOutMachine}
+                                            hideOnClick
+                                        >
+                                            <Image src={iconPin} width="14" height="14" />
+                                        </Tooltip>
+                                    </TaskbarButton>
+                                )}
                                 <TaskbarButton
                                     disabled={!canHomeMachine}
                                     onClick={() => {
-                                        controller.command('gcode', `G28.2 ${axisLabel}0`);
+                                        controller.command('gcode', (controller.type === GRBL) ? `$H${axisLabel}` : `G28.2 ${axisLabel}0`);
                                     }}
                                 >
                                     <Tooltip
@@ -1075,6 +1086,7 @@ class DisplayPanel extends PureComponent {
                     {showPositionInput && (
                         <PositionInput
                             style={{ margin: '5px 0' }}
+                            defaultValue={wpos + ''}
                             onSave={chainedFunction(
                                 (value) => {
                                     actions.setWorkOffsets(axis, value);
@@ -1085,7 +1097,10 @@ class DisplayPanel extends PureComponent {
                         />
                     )}
                     {!showPositionInput &&
-                    <PositionLabel value={wpos} />
+                        <PositionLabel
+                            customClickEvent={this.showPositionInput(axis)}
+                            value={wpos}
+                        />
                     }
                     <Taskbar>
                         <div className="clearfix">

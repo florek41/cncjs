@@ -21,19 +21,60 @@ class PositionInput extends PureComponent {
     state = {
         value: this.props.defaultValue
     };
-
     node = null;
+    handleChange = this.handleChange.bind(this);
+    safeSave = this.safeSave.bind(this);
 
     componentDidMount() {
         this.node.focus();
     }
-
-    render() {
+    handleFocus(event) {
+        event.target.select();
+    }
+    handleChange(event) {
+        const value = event.target.value;
+        this.setState({
+            value
+        });
+    }
+    safeSave() {
         const {
             onSave = noop,
-            onCancel = noop,
+            defaultValue,
             min,
-            max,
+            max
+        } = this.props;
+
+        const input = this.state.value.replace(',', '.');
+        let calc = input;
+        if (input.startsWith('/')) {
+            calc = defaultValue / input.substring(1);
+        }
+        if (!input.startsWith('-') && input.includes('-')) {
+            const numbers = input.split('-');
+            calc = parseFloat(numbers.shift());
+            numbers.forEach((number, i) => {
+                calc -= parseFloat(number);
+            });
+        }
+        if (!input.startsWith('-') && input.includes('+')) {
+            const numbers = input.split('+');
+            calc = parseFloat(numbers.shift());
+            numbers.forEach((number, i) => {
+                calc += parseFloat(number);
+            });
+        }
+
+        if (!Number.isNaN(calc) && calc >= min && calc <= max) {
+            onSave(calc);
+        }
+    }
+    render() {
+        const {
+            // onSave = noop,
+            onCancel = noop,
+            // min,
+            // max,
             className,
             style
         } = this.props;
@@ -48,25 +89,16 @@ class PositionInput extends PureComponent {
                     ref={node => {
                         this.node = node;
                     }}
-                    type="number"
+                    type="text"
                     className="form-control"
                     placeholder=""
                     style={{ borderRight: 'none' }}
                     value={this.state.value}
-                    onChange={(event) => {
-                        let value = event.target.value;
-
-                        if (value === '') {
-                            this.setState({ value: '' });
-                            return;
-                        }
-                        if (value >= min && value <= max) {
-                            this.setState({ value: value });
-                        }
-                    }}
+                    onFocus={this.handleFocus}
+                    onChange={this.handleChange}
                     onKeyDown={(event) => {
                         if (event.keyCode === 13) { // ENTER
-                            onSave(this.state.value);
+                            this.safeSave();
                         }
                         if (event.keyCode === 27) { // ESC
                             onCancel();
@@ -78,9 +110,7 @@ class PositionInput extends PureComponent {
                         type="button"
                         className="btn btn-default"
                         disabled={!isNumber}
-                        onClick={(event) => {
-                            onSave(this.state.value);
-                        }}
+                        onClick={this.safeSave}
                     >
                         <i className="fa fa-fw fa-check" />
                     </button>
